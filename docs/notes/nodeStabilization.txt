@@ -1,0 +1,34 @@
+Next important step:
+
+Make your node persistent and stable
+
+Run NomadNet automatically on boot.
+
+Create service:
+
+nano ~/.config/systemd/user/nomadnet.service
+
+Paste:
+
+[Unit]
+Description=NomadNet Node
+After=network.target
+
+[Service]
+ExecStart=/home/thadeus/rns-venv/bin/nomadnet
+Restart=always
+
+[Install]
+WantedBy=default.target
+
+Save.
+
+Enable:
+
+systemctl --user daemon-reload
+systemctl --user enable nomadnet
+systemctl --user start nomadnet
+
+Enable lingering so it survives logout:
+
+sudo loginctl enable-linger thadeus

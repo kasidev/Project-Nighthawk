@@ -1,0 +1,661 @@
+Schritt 1 — Netzwerkplan
+
+Ich empfehle feste IPs.
+
+Gerät	Hostname	IP
+Router	Nighthawk	192.168.1.1
+Osiris	osiris	192.168.1.10
+Logos	logos	192.168.1.11
+Schritt 2 — Raspberry Pi vorbereiten (Osiris)
+
+Auf Raspberry Pi OS Lite.
+
+Update
+sudo apt update && sudo apt upgrade -y
+Hostname setzen
+sudo raspi-config
+
+→ System Options
+→ Hostname
+→ osiris
+
+Schritt 3 — Statische IP setzen
+
+Datei:
+
+sudo nano /etc/dhcpcd.conf
+
+unten ergänzen:
+
+interface eth0
+static ip_address=192.168.1.10/24
+static routers=192.168.1.1
+static domain_name_servers=1.1.1.1 8.8.8.8
+
+Neustart:
+
+sudo reboot
+Schritt 4 — Reticulum installieren
+
+Auf Osiris:
+
+sudo apt install python3-pip -y
+pip3 install rns
+
+Test:
+
+rnsd --exampleconfig
+
+Config liegt dann hier:
+
+~/.reticulum/config
+Schritt 5 — Reticulum Daemon starten
+rnsd
+
+oder als Service:
+
+sudo nano /etc/systemd/system/rns.service
+
+Inhalt:
+
+[Unit]
+Description=Reticulum Network Stack
+After=network.target
+
+[Service]
+User=pi
+ExecStart=/home/pi/.local/bin/rnsd
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+aktivieren:
+
+sudo systemctl daemon-reload
+sudo systemctl enable rns
+sudo systemctl start rns
+
+
+Schritt 7 — Reverse Proxy
+
+Installiere nginx:
+
+sudo apt install nginx
+
+
+Schritt 8 - install git 
+sudo apt install git python3 -y
+
+Schritt 9 Off-Grid-Community Suite
+git clone https://github.com/Nezugi/Off-Grid-Community-Suite.git
+cd Off-Grid-Community-Suite
+ls -la
+
+chmod +x Suite_Install.sh
+./Suite_Install.sh
+Your selection (e.g. 1 3 5): 7 8 6 3 5
+
+
+Schritt 9 Nomad Nomadnet
+pip install nomadnet
+nomadnet
+
+Schritt 10 Install nerd fonts
+mkdir -p ~/.local/share/fonts
+cd /tmp
+wget https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+unzip JetBrainsMono.zip -d ~/.local/share/fonts/JetBrainsMono
+fc-cache -fv
+
+
+
+
+
+To amend for NomadNet
+
+Config:
+
+sudo nano /etc/nginx/sites-available/forum
+server {
+    listen 80;
+
+    server_name osiris.local;
+
+    location / {
+        proxy_pass http://127.0.0.1:4567;
+        proxy_http_version 1.1;
+    }
+}
+
+Aktivieren:
+
+sudo ln -s /etc/nginx/sites-available/forum /etc/nginx/sites-enabled/
+sudo systemctl restart nginx
+
+
+
+                                                                          
+ # #    # # ##### #   ##   #          ####  ###### ##### #    # #####     
+ # ##   # #   #   #  #  #  #         #      #        #   #    # #    #    
+ # # #  # #   #   # #    # #          ####  #####    #   #    # #    #    
+ # #  # # #   #   # ###### #              # #        #   #    # #####     
+ # #   ## #   #   # #    # #         #    # #        #   #    # #         
+ # #    # #   #   # #    # ######     ####  ######   #    ####  #         
+                                                                          
+
+ INITIAL SETUP — OSIRIS COMMUNITY NODE
+=====================================
+
+Project:
+--------
+Minimal decentralized neighborhood communication network using:
+
+- Raspberry Pi
+- Reticulum
+- NomadNet
+- Off-Grid-Community-Suite
+- Local WiFi
+- Optional captive portal
+- Optional internet mirror
+
+Goal:
+-----
+Create a portable community communication node that works:
+- locally without internet
+- over Reticulum
+- through NomadNet
+- via local WiFi
+- optionally with normal web browsers
+
+Architecture:
+-------------
+Windows / Android / Linux Clients
+                ↓
+         TCP Reticulum
+                ↓
+      Raspberry Pi "Osiris"
+                ↓
+     NomadNet Community Suite
+                ↓
+   Blog / Chat / Forum / Yellow
+
+
+========================================================
+PHASE 1 — RASPBERRY PI BASE INSTALL
+========================================================
+
+Hardware:
+---------
+- Raspberry Pi 3B
+- Ethernet or WiFi
+- microSD card
+- Power supply
+
+Recommended OS:
+---------------
+Raspberry Pi OS Lite
+
+Hostname:
+---------
+osiris
+
+Set hostname:
+
+sudo raspi-config
+
+
+========================================================
+PHASE 2 — SYSTEM UPDATE
+========================================================
+
+sudo apt update
+sudo apt upgrade -y
+
+
+========================================================
+PHASE 3 — PYTHON VENV
+========================================================
+
+New Raspberry Pi OS versions block system-wide pip installs.
+
+Install:
+
+sudo apt install python3-venv python3-full python3-pip git -y
+
+Create venv:
+
+python3 -m venv ~/rns-venv
+
+Activate:
+
+source ~/rns-venv/bin/activate
+
+
+========================================================
+PHASE 4 — INSTALL RETICULUM
+========================================================
+
+Inside venv:
+
+pip install --upgrade pip
+pip install rns
+
+Generate config:
+
+rnsd --exampleconfig
+
+Config location:
+
+~/.reticulum/config
+
+
+========================================================
+PHASE 5 — ENABLE TCP SERVER
+========================================================
+
+Edit:
+
+nano ~/.reticulum/config
+
+Add as top-level interface block:
+
+[[AutoInterface LAN]]
+    type = AutoInterface
+    interface_enabled = True
+
+[[TCP Server]]
+  type = TCPServerInterface
+  enabled = yes
+   listen_ip = 0.0.0.0
+   listen_port = 4242
+
+[[Berlin_IPv4]]
+  type = BackboneInterface
+  enabled = yes
+  remote = 82.165.27.170
+  target_port = 443
+  transport_identity = 226849a1caffd1f15946a51768f3366e
+
+
+
+when adding BackboneInterface be aware that for instance ipv6 
+host addresses might not work depeding on the network setup
+
+
+========================================================
+PHASE 6 — START RETICULUM
+========================================================
+
+Start:
+
+source ~/rns-venv/bin/activate
+rnsd
+
+Verify listening port:
+
+ss -tulpen | grep 4242
+
+Expected:
+
+tcp LISTEN 0 5 0.0.0.0:4242
+
+
+========================================================
+PHASE 7 — INSTALL NOMADNET
+========================================================
+
+Inside venv:
+
+pip install nomadnet
+
+Start:
+
+nomadnet
+
+IMPORTANT:
+----------
+Run in separate terminal from rnsd.
+
+Correct structure:
+
+Terminal 1:
+rnsd
+
+Terminal 2:
+nomadnet
+
+
+========================================================
+PHASE 8 — INSTALL COMMUNITY SUITE
+========================================================
+
+Clone:
+
+cd ~
+git clone https://github.com/Nezugi/Off-Grid-Community-Suite.git
+
+Copy into NomadNet pages:
+
+mkdir -p ~/.nomadnetwork/storage/pages
+
+cp -r ~/Off-Grid-Community-Suite/* \
+~/.nomadnetwork/storage/pages/
+
+Verify:
+
+ls ~/.nomadnetwork/storage/pages
+
+Expected:
+---------
+blog
+calendar
+chat
+comboard
+index.mu
+yellow
+
+
+========================================================
+PHASE 9 — NOMADNET NODE CONFIG
+========================================================
+
+Inside NomadNet:
+----------------
+
+- Set node name
+- Announce node
+
+Example name:
+-------------
+nighthawk
+or
+Osiris Community Node
+
+Verify:
+-------
+Served Pages > 0
+
+
+========================================================
+PHASE 10 — WINDOWS CLIENT
+========================================================
+
+Install Python:
+---------------
+Microsoft Store Python works.
+
+Install NomadNet + Reticulum:
+
+py -m pip install --user rns nomadnet
+
+NomadNet executable path:
+-------------------------
+
+C:\Users\USERNAME\AppData\Local\Packages\
+PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\
+LocalCache\local-packages\Python313\Scripts\nomadnet.exe
+
+
+========================================================
+PHASE 11 — POWERSHELL ALIAS
+========================================================
+
+Create PowerShell profile:
+
+New-Item -ItemType Directory -Force (Split-Path $PROFILE)
+New-Item -ItemType File -Force $PROFILE
+
+Open:
+
+notepad $PROFILE
+
+Add:
+
+function nomadnet {
+& "$env:LOCALAPPDATA\Packages\
+PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\
+LocalCache\local-packages\Python313\Scripts\nomadnet.exe"
+}
+
+Reload:
+
+. $PROFILE
+
+Now works:
+
+nomadnet
+
+
+========================================================
+PHASE 12 — WINDOWS RETICULUM CONFIG
+========================================================
+
+Create:
+
+C:\Users\USERNAME\.reticulum\config
+
+Add:
+
+[[Osiris]]
+type = TCPClientInterface
+enabled = yes
+target_host = 192.168.1.10
+target_port = 4242
+
+Replace IP with real Osiris IP.
+
+
+========================================================
+PHASE 13 — CONNECT WINDOWS CLIENT
+========================================================
+
+Start:
+
+nomadnet
+
+Open:
+------
+Network
+
+Expected:
+---------
+Node appears:
+- nighthawk
+- Osiris
+
+First connection:
+-----------------
+Request Keys
+
+After key exchange:
+-------------------
+Community Suite accessible.
+
+
+========================================================
+PHASE 14 — OPTIONAL WEB GATEWAY
+========================================================
+
+Install nginx:
+
+sudo apt install nginx -y
+
+Test:
+-----
+http://192.168.1.10
+
+Create portal:
+
+sudo nano /var/www/html/index.html
+
+Possible links:
+---------------
+- Forum
+- Chat
+- Blog
+- Schoggi Voting
+- Crisis Board
+
+sudo systemctl enable --now nginx
+
+
+========================================================
+PHASE 15 — OPTIONAL CAPTIVE PORTAL
+========================================================
+
+Goal:
+-----
+Phones automatically open local portal after joining WiFi.
+
+Install:
+
+sudo apt install dnsmasq avahi-daemon -y
+
+Edit:
+
+sudo nano /etc/dnsmasq.conf
+
+Add:
+
+address=/#/192.168.1.10
+
+Effect:
+-------
+All DNS redirects to Osiris.
+
+Local domain:
+-------------
+http://osiris.local
+
+========================================================
+PHASE 16 — setup service to start rnsd on startup of osiris
+========================================================
+
+
+
+sudo nano /etc/systemd/system/rnsd.service
+
+[Unit]
+Description=Reticulum Transport Node Daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=osiris
+WorkingDirectory=/home/osiris
+ExecStart=/home/osiris/rns-venv/bin/rnsd
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
+
+stop and start reticulum-startup.service
+    sudo systemctl stop reticulum-startup.service
+    systemctl status reticulum-startup.service
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now reticulum-startup.service
+    systemctl status reticulum-startup.service
+    journalctl -u reticulum-startup.service -f
+
+
+
+sudo systemctl enable --now rnsd
+
+
+========================================================
+PHASE 17 — install tmux in order to have nomadnet running
+========================================================
+
+We install the utility tmux so that we can start a detached terminal session
+in this we will start nomadnet. This enables us to connect via ssh to 
+osiris and then via tmux to an nomadnet instance which is allways running
+
+sudo apt install tmux
+
+tmux new -s nomadnet
+
+
+to leave the tmux session without closing it [Ctrl] + [B] and then [D]
+
+to reconnect to the session 
+tmux attach -t nomadnet
+
+
+tmux ls
+
+tmux kill-session -t nomadnet
+
+
+
+========================================================
+PHASE 17b — put the tmux setup in a service so that it starts on boot
+========================================================
+
+nano ~/.config/systemd/user/nomadnet-tmux.service
+
+[Unit]
+Description=NomadNet inside tmux
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/tmux new-session -d -s nomadnet 'nomadnet'
+ExecStop=/usr/bin/tmux kill-session -t nomadnet
+
+[Install]
+WantedBy=default.target
+
+
+systemctl --user daemon-reload
+systemctl --user enable --now nomadnet-tmux
+loginctl enable-linger $USER
+
+
+
+========================================================
+PHASE 16 — RECOMMENDED FUTURE WORK
+========================================================
+
+- systemd services
+- automatic startup
+- internet mirror node
+- QR codes
+- Schoggi voting system
+- local mesh routing
+- Android Termux clients
+- LXMF messaging
+- Reticulum over LoRa
+- Solar-powered node
+- Emergency community board
+
+
+========================================================
+FINAL RESULT
+========================================================
+
+A minimal decentralized neighborhood communication node
+running on a Raspberry Pi with:
+
+- Reticulum
+- NomadNet
+- Off-Grid-Community-Suite
+- local WiFi access
+- optional browser access
+- optional internet independence
+
+Suitable for:
+-------------
+- Tag der Nachbarn
+- Festivals
+- Community events
+- Crisis communication
+- Local social networks
+- Temporary local intranet
+- Educational demonstrations
+- Resilient communication systems                                                                         

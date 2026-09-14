@@ -1,0 +1,14 @@
+Make your node persistent and stable:
+
+    ☐ Run NomadNet automatically on boot
+    ☐ automatic daily reboot
+    ☐ check if service is running and restart if not
+    ☐ make a log file for NomadNet service
+
+Setup Instruction:
+    ✔ document every step as detailed as possible @done(26-09-14 15:10)
+    ☐ make a short video tutorial for the setup process
+    ☐ make a 1 page quick start guide for the setup process
+    ☐ make a shopping list
+    ☐ try out the guide myself
+    ☐ try out the guide with a friend and get feedback

@@ -1,0 +1,46 @@
+from my windows laptop, connected to the Nighthawk router: 
+
+    ssh thadeus@osiris
+
+activate virtual environment: 
+    source ~/rns-venv/bin/activate
+
+open a second terminal window connect per ssh to osiris and start the virtual environment there to:
+    source ~/rns-venv/bin/activate
+
+
+open nomadnet
+    nomadnet
+
+start nomadnet on windows machine:
+    & "$env:LOCALAPPDATA\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\Scripts\nomadnet.exe"
+
+
+deactivate virual environment:
+ deactivate
+
+
+kill rnsd: 
+pkill rnsd
+
+check if rnsd is running: 
+    ps aux | grep rnsd
+    pgrep -a rnsd
+
+check network config
+ip addre
+ip route
+ping -c 3 reticulum.network
+ip -6 addr (fe80: is only the local one)
+
+
+stop and start reticulum-startup.service
+    sudo systemctl stop reticulum-startup.service
+    systemctl status reticulum-startup.service
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now reticulum-startup.service
+    systemctl status reticulum-startup.service
+    journalctl -u reticulum-startup.service -f
+
+
