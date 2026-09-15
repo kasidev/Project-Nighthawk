@@ -1,6 +1,6 @@
 from my windows laptop, connected to the Nighthawk router: 
 
-    ssh thadeus@osiris
+    ssh <HOSTNAME>@<USERNAME>
 
 activate virtual environment: 
     source ~/rns-venv/bin/activate
@@ -42,5 +42,9 @@ stop and start reticulum-startup.service
     sudo systemctl enable --now reticulum-startup.service
     systemctl status reticulum-startup.service
     journalctl -u reticulum-startup.service -f
+
+
+created ssh tunnel from machine to osiris ssh -L 8090:10.35.0.1:80 thadeus@osiris
+when this is established you can configure the router via a browser by navigating to http://localhost:8090
 
 
